@@ -92,16 +92,17 @@ class Translator{
 	 */
 	public function t_block($content){
 
-		if(preg_match('/{{extends ([^\}]*)}}/iU',$content,$r)){
+		if(preg_match('/@extends\(([^\}]*)\)/iU',$content,$r)){
 
-			$content = str_replace('{{extends '.$r[1].'}}',"<?php ".$this -> getEngineCall()."::startExtends('$r[1]'); ?>",$content);
+			$content = str_replace('@extends('.$r[1].")","<?php ".$this -> getEngineCall()."::startExtends($r[1]); ?>",$content);
+
 			$content .= "<?php ".$this -> getEngineCall()."::endExtends(); ?>";
 
 		}
 
-		$content = preg_replace('/{{includes ([^\s]*) ([^\}]*)}}/iU','<?php '.$this -> getEngineCall().'::startIncludes("$1","$2"); ?>',$content,-1,$count_adv);
-		$content = preg_replace('/{{includes ([^\}]*)}}/iU','<?php '.$this -> getEngineCall().'::startIncludes("$1","$1"); ?>',$content,-1,$count_basic);
-		$content = preg_replace('/{{\/includes}}/iU','<?php '.$this -> getEngineCall().'::endIncludes(); ?>',$content,-1,$count_close);
+		$content = preg_replace('/@embed\(([^\s]*),([^\}]*)\)/iU','<?php '.$this -> getEngineCall().'::startIncludes($1,$2); ?>',$content,-1,$count_adv);
+		$content = preg_replace('/@embed\(([^\}]*)\)/iU','<?php '.$this -> getEngineCall().'::startIncludes($1,$1); ?>',$content,-1,$count_basic);
+		$content = preg_replace('/@endembed/iU','<?php '.$this -> getEngineCall().'::endIncludes(); ?>',$content,-1,$count_close);
 
 		if($count_adv + $count_basic != $count_close){
 			throw new Exceptions\IncludesException(
@@ -114,8 +115,8 @@ class Translator{
 		$content = preg_replace('/{{parent}}/',Translator::PARENT_CONTENT,$content);
 
 
-		$content = preg_replace('/{{block ([^\}]*)}}/iU',"<?php ".$this -> getEngineCall()."::startBlock('$1'); ?>",$content,-1,$count_open);
-		$content = preg_replace('/{{\/block}}/',"<?php ".$this -> getEngineCall()."::endBlock(); ?>",$content,-1,$count_close);
+		$content = preg_replace('/@block\(([^\}]*)\)/iU',"<?php ".$this -> getEngineCall()."::startBlock($1); ?>",$content,-1,$count_open);
+		$content = preg_replace('/@endblock/',"<?php ".$this -> getEngineCall()."::endBlock(); ?>",$content,-1,$count_close);
 
 		if($count_open != $count_close){
 			throw new Exceptions\BlockException(
@@ -135,8 +136,9 @@ class Translator{
 	 */
 	public function t_include($content){
 
-		$content = preg_replace('/{{include ([^\s]*) ([^\}]*)}}/iU','<?php '.$this -> getEngineCall().'::include("$1",$2); ?>',$content);
-		$content = preg_replace('/{{include ([^\}]*)}}/iU','<?php '.$this -> getEngineCall().'::include("$1"); ?>',$content);
+
+		$content = preg_replace('/@include\((.*),(.*)\)/i','<?php '.$this -> getEngineCall().'::include($1,$2); ?>',$content);
+		$content = preg_replace('/@include\((.*)\)/i','<?php '.$this -> getEngineCall().'::include($1); ?>',$content);
 
 		return $content;
 	}
@@ -150,13 +152,14 @@ class Translator{
 	 */
 	public function t_array($content){
 
+		return $content;
+
 		# array
 		preg_match_all('/{{([^\}]*)}}/iU',$content,$r);
 		foreach($r[0] as $n => $k){
 			$i = preg_replace('/\.([\w]*)/','[\'$1\']',$k);
 			$content = str_replace($k,$i,$content);
 		}
-
 		return $content;
 	}
 
@@ -169,14 +172,14 @@ class Translator{
 	public function t_for($content){
 
 		# for 
-		preg_match_all('/{{for ([^\}]*) as ([^\}]*)}}/iU',$content,$r);
+		preg_match_all('/@foreach\((.*) as (.*)\)/i',$content,$r);
 		
 		foreach($r[0] as $n => $k){
 
 			$content = str_replace("{$k}",'<?php foreach((array)'.$r[1][$n].' as '.$r[2][$n].'){ ?>',$content);
 		}
 
-		$content = preg_replace('/{{\/for}}/iU','<?php } ?>',$content);
+		$content = preg_replace('/@endforeach/i','<?php } ?>',$content);
 
 		return $content;
 	}
@@ -189,19 +192,22 @@ class Translator{
 	 */
 	public function t_switch($content){
 
-		$content = preg_replace('/{{switch ([^\}]*)}}([^\{]*){{case/iU',"{{switch $1}}\n{{case",$content);
-		$content = preg_replace('/{{\/(case)}}([^\{]*){{(case)/iU','{{/case}}'."\n".'{{case',$content);
-		$content = preg_replace('/{{\/(case)}}([^\{]*){{\/switch}}/iU','{{/case}}'."\n".'{{/switch}}',$content);
+		
+		$content = preg_replace('/@switch\((.*)\)([^\@]*)@case/i',"@switch($1)\n@case",$content);
+		$content = preg_replace('/@switch\((.*)\)([^\@]*)@default/i',"@switch($1)\n@default",$content);
+		$content = preg_replace('/@endcase([^\@]*)@case/i',"@endcase\n@case",$content);
+		$content = preg_replace('/@endcase([^\@]*)@default/i',"@endcase\n@default",$content);
+		
 
 		# switch
-		preg_match_all('/{{switch ([^\}]*)}}/iU',$content,$r);
+		preg_match_all('/\@switch\((.*)\)/i',$content,$r);
 	
 		foreach($r[0] as $n => $k){
 			$content = str_replace($k,'<?php switch('.$r[1][$n].'){ ?>',$content);
 		}
 
-		$content = preg_replace('/{{case default}}/iU','<?php default: ?>',$content);
-		preg_match_all('/{{case ([^\} ]*)}}/iU',$content,$r);
+		$content = preg_replace('/\@default/i','<?php default: ?>',$content);
+		preg_match_all('/\@case\((.*)\)/i',$content,$r);
 	
 		foreach($r[0] as $n => $k)
 			$content = str_replace($k,'<?php case '.$r[1][$n].': ?>',$content);
@@ -209,8 +215,8 @@ class Translator{
 
 		$content = preg_replace(
 			[
-				'/{{\/switch}}/iU',
-				'/{{\/case}}/iU',
+				'/@endswitch/i',
+				'/@endcase/i',
 			],
 			[
 				'<?php } ?>',
@@ -230,15 +236,15 @@ class Translator{
 	 */
 	public function t_if($content){
 
+
+
 		# if
-		preg_match_all('/{{if ([^\}]*)}}/iU',$content,$r);
+		$content = preg_replace('/\@if\((.*)\)/i','<?php if($1){ ?>',$content);
+		
 	
-		foreach($r[0] as $n => $k){
-			$content = str_replace($k,'<?php if('.$r[1][$n].'){ ?>',$content);
-		}
 		
 		# else if
-		preg_match_all('/{{elseif ([^\}]*)}}/iU',$content,$r);
+		preg_match_all('/\@elseif\((.*)\)/i',$content,$r);
 	
 		foreach($r[0] as $n => $k)
 			$content = str_replace($k,'<?php }else if('.$r[1][$n].'){ ?>',$content);
@@ -246,9 +252,9 @@ class Translator{
 
 		$content = preg_replace(
 			[
-				'/{{\/for}}/iU',
-				'/{{\/if}}/iU',
-				'/{{else}}/iU'
+				'/@endforeach/i',
+				'/@endif/i',
+				'/@else/i',
 			],
 			[
 				'<?php } ?>',
@@ -269,7 +275,6 @@ class Translator{
 	 */
 	public function t_print($content){
 
-		
 		# variables
 		preg_match_all('/{{([^\}]*)}}/iU',$content,$r);
 		foreach($r[1] as $n => $k){
