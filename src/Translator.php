@@ -60,6 +60,7 @@ class Translator{
 	public function translate($content){
 
 
+
 		$compiler = new Compiler($content);
 		$compiler -> translate('@endcase*@default',"@endcase\n@default");
 		$compiler -> translate('@switch(*)*@case',"@switch($1)\n@case");
@@ -68,7 +69,7 @@ class Translator{
 		$compiler -> translate('@endcase*@default',"@endcase\n@default");
 		$compiler -> process();
 		$content = $compiler -> getContent();
-
+		
 
 		$compiler = new Compiler($content);
 

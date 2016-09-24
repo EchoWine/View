@@ -71,17 +71,17 @@ class Parser{
 		for($i = 0;$i < count($content);$i++){
 
 
-			if(!isset($replace_to_array[$replaces_n])){
-				$replace_to_array[$replaces_n] = [];
-				$replace_to_array_n[$replaces_n] = 0;
-				$all_replace_buffer[$replaces_n] = '';
-				$all_replace_enabled[$replaces_n] = false;
-				$replace_buffer[$replaces_n] = '';
-				$part_from_n[$replaces_n] = 0;
-				$part_from_n_type[$replaces_n] = 0;
-				$buffer_word[$replaces_n] = '';
-				$buffer_word_n[$replaces_n] = 0;
-				$part_from_types[$replaces_n] = [];
+			if(!isset($this -> vars[$replaces_n])){
+				$this -> vars[$replaces_n]['replace_to_array'] = [];
+				$this -> vars[$replaces_n]['replace_to_array_n'] = 0;
+				$this -> vars[$replaces_n]['all_replace_buffer'] = '';
+				$this -> vars[$replaces_n]['all_replace_enabled'] = false;
+				$this -> vars[$replaces_n]['replace_buffer'] = '';
+				$this -> vars[$replaces_n]['part_from_n'] = 0;
+				$this -> vars[$replaces_n]['part_from_n_type'] = 0;
+				$this -> vars[$replaces_n]['buffer_word'] = '';
+				$this -> vars[$replaces_n]['buffer_word_n'] = 0;
+				$this -> vars[$replaces_n]['part_from_types'] = [];
 			}
 
 			$char = $content[$i];
@@ -90,7 +90,7 @@ class Parser{
 			$this -> debug("-- CHAR: ".$char."\n");
 
 			# Am i in a string?
-			if($all_replace_enabled[$replaces_n] == true){
+			if($this -> vars[$replaces_n]['all_replace_enabled'] == true){
 			# This char open/close string
 			if($char == "'" || $char == '"'){
 
@@ -138,7 +138,7 @@ class Parser{
 
 			
 			# In need to count char only when i in * and not in a string
-			if($all_replace_enabled[$replaces_n] == true && !$string_in){
+			if($this -> vars[$replaces_n]['all_replace_enabled'] == true && !$string_in){
 
 				# I'm not in a string, so i can count all brackets
 				# How this will work?
@@ -168,7 +168,7 @@ class Parser{
 			$brackets_opened = false;
 
 			$this -> debug("-- brackets : ".json_encode($char_brackets)."\n");
-			if(($all_replace_enabled[$replaces_n] == true && !$string_in) || $all_replace_enabled[$replaces_n] == false){
+			if(($this -> vars[$replaces_n]['all_replace_enabled'] == true && !$string_in) || $this -> vars[$replaces_n]['all_replace_enabled'] == false){
 
 				foreach($char_brackets as $brackets){
 
@@ -181,7 +181,7 @@ class Parser{
 			}
 
 			# In need to count char only when i in * and not in a string
-			if((isset($all_replace_enabled[$replaces_n]) && $all_replace_enabled[$replaces_n] == true) && !$string_in){
+			if((isset($this -> vars[$replaces_n]['all_replace_enabled']) && $this -> vars[$replaces_n]['all_replace_enabled'] == true) && !$string_in){
 
 				# I'm not in a string, so i can count all brackets
 				# How this will work?
@@ -199,20 +199,11 @@ class Parser{
 			}
 
 			$this -> debug("-- is a brackets open? : ".($brackets_opened ? 1 : 0)."\n");
-			if((!$brackets_opened && $all_replace_enabled[$replaces_n] == true && !$string_in) || $all_replace_enabled[$replaces_n] == false){
+			if((!$brackets_opened && $this -> vars[$replaces_n]['all_replace_enabled'] == true && !$string_in) || $this -> vars[$replaces_n]['all_replace_enabled'] == false){
 
 				$found = false;
 
-				$this -> debug("-- replace_n: ".$replaces_n."\n");
-				$this -> debug("-- part_from_n: ".json_encode($part_from_n)."\n");
-				$this -> debug("-- part_from_n_type: ".json_encode($part_from_n_type)."\n");
-				$this -> debug("-- buffer_word: ".json_encode($buffer_word)."\n");
-				$this -> debug("-- buffer_word_n: ".json_encode($buffer_word_n)."\n");
-				$this -> debug("-- all_replace_buffer: ".json_encode($all_replace_buffer)."\n");
-				$this -> debug("-- replace_buffer: ".json_encode($replace_buffer)."\n");
-				$this -> debug("-- replace_to_array: ".json_encode($replace_to_array)."\n");
-				$this -> debug("-- all_replace_enabled: ".json_encode($all_replace_enabled)."\n");
-				$this -> debug("-- part_from_types: ".json_encode($part_from_types)."\n");
+				$this -> debug("-- vars: ".json_encode($this -> vars)."\n");
 
 
 						$found_char = false;
@@ -233,15 +224,16 @@ class Parser{
 					$this -> debug("	-- part_from: ".json_encode($part_from)."\n");
 
 					# I'm searching for a replace that must have a "char" with current index searched
-					if(isset($part_from[$part_from_n[$replaces_n]]) && isset($part_from[$part_from_n[$replaces_n]][$buffer_word_n[$replaces_n]])){
+					if(isset($part_from[$this -> vars[$replaces_n]['part_from_n']]) && isset($part_from[$this -> vars[$replaces_n]['part_from_n']][$this -> vars[$replaces_n]['buffer_word_n']])){
 
 
 						# Need to search foer every $part_from_n exists
 
+						$part_from_n = $this -> getAllElementsFromVar('part_from_n');
 						for($n1 = 0; $n1 < count($part_from_n) ; $n1++){
 
 							$k1 = $part_from_n[$n1];
-							$n3 = $buffer_word_n[$n1];
+							$n3 = $this -> vars[$n1]['buffer_word_n'];
 
 							if(isset($part_from[$k1][$n3])){
 
@@ -249,9 +241,9 @@ class Parser{
 
 								if($char == $part_from[$k1][$n3]){
 
-									$this -> debug("	-- part from found: ".(substr($part_from[$k1],0,$n3+1))." == {$buffer_word[$n1]}{$char}\n");
+									$this -> debug("	-- part from found: ".(substr($part_from[$k1],0,$n3+1))." == {$this -> vars[$n1]['buffer_word']}{$char}\n");
 
-									if(substr($part_from[$k1],0,$n3+1) == $buffer_word[$n1].$char && $this -> inPart($part_from,$part_from_types[$replaces_n],$k1)){
+									if(substr($part_from[$k1],0,$n3+1) == $this -> vars[$n1]['buffer_word'].$char && $this -> inPart($part_from,$this -> vars[$replaces_n]['part_from_types'],$k1)){
 										$this -> debug("-- FIND IN: {$part_from[$part_from_n[$n1]]}\n");
 										$this -> debug("-- n1 => k1: $n1 => $k1: \n");
 
@@ -270,22 +262,22 @@ class Parser{
 
 
 				if(!$found_char){
-					$buffer_word[$replaces_n] = '';
-					$buffer_word_n[$replaces_n] = 0;
+					$this -> vars[$replaces_n]['buffer_word'] = '';
+					$this -> vars[$replaces_n]['buffer_word_n'] = 0;
 
 					$this -> debug("-- IS NOT EQUAL \n");
 
-					if($all_replace_enabled[$replaces_n] == true){
+					if($this -> vars[$replaces_n]['all_replace_enabled'] == true){
 
-						$replace_buffer[$replaces_n] .= $char;
+						$this -> vars[$replaces_n]['replace_buffer'] .= $char;
 
-						if(!isset($all_replace_buffer[$replaces_n])){
-							$all_replace_buffer[$replaces_n] = '';
+						if(!isset($this -> vars[$replaces_n]['all_replace_buffer'])){
+							$this -> vars[$replaces_n]['all_replace_buffer'] = '';
 						}
-						$all_replace_buffer[$replaces_n] .= $char;
+						$this -> vars[$replaces_n]['all_replace_buffer'] .= $char;
 
-						$this -> debug("-- BUFFER *: ".$all_replace_buffer[$replaces_n]."\n");
-						$this -> debug("-- BUFFER REPLACE: ".$replace_buffer[$replaces_n]."\n");
+						$this -> debug("-- BUFFER *: ".$this -> vars[$replaces_n]['all_replace_buffer']."\n");
+						$this -> debug("-- BUFFER REPLACE: ".$this -> vars[$replaces_n]['replace_buffer']."\n");
 					}else{
 
 
@@ -293,7 +285,7 @@ class Parser{
 
 							$n1 = 0;
 							$k1 = 0;
-							$n3 = $buffer_word_n[$n1];
+							$n3 = $this -> vars[$n1]['buffer_word_n'];
 
 							if(isset($part_from[$k1][$n3])){
 								if($char == $part_from[$k1][$n1]){
@@ -311,14 +303,14 @@ class Parser{
 						}
 
 						# Ops.. This isn't the all searched.. Damm. Reset all buffer
-						$replace_to_array[$replaces_n] = [];
-						$replace_to_array_n[$replaces_n] = 0;
-						$all_replace_buffer[$replaces_n] = '';
-						$all_replace_enabled[$replaces_n] = false;
-						$replace_buffer[$replaces_n] = '';
-						$part_from_n[$replaces_n] = 0;
-						$part_from_n_type[$replaces_n] = 0;
-						$part_from_types[$replaces_n] = [];
+						$this -> vars[$replaces_n]['replace_to_array'] = [];
+						$this -> vars[$replaces_n]['replace_to_array_n'] = 0;
+						$this -> vars[$replaces_n]['all_replace_buffer'] = '';
+						$this -> vars[$replaces_n]['all_replace_enabled'] = false;
+						$this -> vars[$replaces_n]['replace_buffer'] = '';
+						$this -> vars[$replaces_n]['part_from_n'] = 0;
+						$this -> vars[$replaces_n]['part_from_n_type'] = 0;
+						$this -> vars[$replaces_n]['part_from_types'] = [];
 
 						$replaces_n--;
 
@@ -337,9 +329,9 @@ class Parser{
 					$part_from = explode("*",$last_from);
 
 					# In this situation, without brackets and not in a string, i have found the next "char" that start the next part_from
-					if($all_replace_enabled[$replaces_n] == true){
+					if($this -> vars[$replaces_n]['all_replace_enabled'] == true){
 
-						$all_replace_enabled[$replaces_n] = false;
+						$this -> vars[$replaces_n]['all_replace_enabled'] = false;
 
 						# Now i need to check if the "char" is the next part or the first part of a second term
 						# Count is ZERO, so it's the first part of a new term
@@ -348,16 +340,16 @@ class Parser{
 
 						if($k1 == 0){
 							$replaces_n++;
-							$replace_to_array[$replaces_n] = [];
-							$replace_to_array_n[$replaces_n] = 0;
-							$all_replace_buffer[$replaces_n] = '';
-							$all_replace_enabled[$replaces_n] = false;
-							$replace_buffer[$replaces_n] = '';
-							$part_from_n[$replaces_n] = 0;
-							$part_from_n_type[$replaces_n] = 0;
-							$buffer_word[$replaces_n] = '';
-							$buffer_word_n[$replaces_n] = 0;
-							$part_from_types[$replaces_n] = [];
+							$this -> vars[$replaces_n]['replace_to_array'] = [];
+							$this -> vars[$replaces_n]['replace_to_array_n'] = 0;
+							$this -> vars[$replaces_n]['all_replace_buffer'] = '';
+							$this -> vars[$replaces_n]['all_replace_enabled'] = false;
+							$this -> vars[$replaces_n]['replace_buffer'] = '';
+							$this -> vars[$replaces_n]['part_from_n'] = 0;
+							$this -> vars[$replaces_n]['part_from_n_type'] = 0;
+							$this -> vars[$replaces_n]['buffer_word'] = '';
+							$this -> vars[$replaces_n]['buffer_word_n'] = 0;
+							$this -> vars[$replaces_n]['part_from_types'] = [];
 							$char_brackets['()']=0;
 							$char_brackets['[]']=0;
 							$char_brackets['{}']=0;
@@ -367,13 +359,13 @@ class Parser{
 						}else{
 
 							# Now turn off "ALL CHARACTER"
-							$all_replace_enabled[$replaces_n] = false;
+							$this -> vars[$replaces_n]['all_replace_enabled'] = false;
 
 							# Now i can take the buffer of all_replace
-							$replace_to_array[$replaces_n][$replace_to_array_n[$replaces_n]++] = $all_replace_buffer[$replaces_n];
+							$this -> vars[$replaces_n]['replace_to_array'][$this -> vars[$replaces_n]['replace_to_array_n']++] = $this -> vars[$replaces_n]['all_replace_buffer'];
 							$this -> debug(" -- SET REPLACE TO ARRAY: ".$replaces_n.": ".json_encode($all_replace_buffer)."\n");
 
-							$all_replace_buffer[$replaces_n] = '';
+							$this -> vars[$replaces_n]['all_replace_buffer'] = '';
 						}
 					}
 
@@ -381,84 +373,75 @@ class Parser{
 
 					}
 
-					$part_from_n_type[$replaces_n] = $last_from;
+					$this -> vars[$replaces_n]['part_from_n_type'] = $last_from;
 
-					if(!isset($part_from_types[$replaces_n])){
-						$part_from_types[$replaces_n] = [];
+					if(!isset($this -> vars[$replaces_n]['part_from_types'])){
+						$this -> vars[$replaces_n]['part_from_types'] = [];
 					}
-					$part_from_types[$replaces_n][$part_from_n[$replaces_n]] = $part_from[$k1];
+					$this -> vars[$replaces_n]['part_from_types'][$this -> vars[$replaces_n]['part_from_n']] = $part_from[$k1];
 					
 
 
-					$replace_buffer[$replaces_n] .= $char;
+					$this -> vars[$replaces_n]['replace_buffer'] .= $char;
 
-					$buffer_word[$replaces_n] .= $char;
+					$this -> vars[$replaces_n]['buffer_word'] .= $char;
 
-					$this -> debug("-- BUFFER WORD: ".$buffer_word[$replaces_n]);
+					$this -> debug("-- BUFFER WORD: ".$this -> vars[$replaces_n]['buffer_word']);
 					$this -> debug("\n");
 
-					$buffer_word_n[$replaces_n]++;
+					$this -> vars[$replaces_n]['buffer_word_n']++;
 
 					# If word has reached the full string
 
-					$this -> debug("-- CLOSE: ".$buffer_word[$replaces_n]." == ".$part_from[$part_from_n[$replaces_n]]."\n");
-					if($buffer_word[$replaces_n] == $part_from[$part_from_n[$replaces_n]]){
+					$this -> debug("-- CLOSE: ".$this -> vars[$replaces_n]['buffer_word']." == ".$part_from[$this -> vars[$replaces_n]['part_from_n']]."\n");
+					if($this -> vars[$replaces_n]['buffer_word'] == $part_from[$this -> vars[$replaces_n]['part_from_n']]){
 
 						$this -> debug("-- YEAH MAN. WE ARE IN \n");
-						$this -> debug("-- Uhm... Is this final ? ".(count($part_from) -1)." == ".$part_from_n[$replaces_n]."\n");
-						$this -> debug("-- replace_to_array: ".json_encode($replace_to_array)."\n");
+						$this -> debug("-- Uhm... Is this final ? ".(count($part_from) -1)." == ".$this -> vars[$replaces_n]['part_from_n']."\n");
 						
 						# Is this the end of "replaces" ?
 						# for example: "fun_a()" have two parts "fun_a(",")"
 						# This if check if we are in the last part
 						# If we aren't in the last part we are in the middle
 
-						if((count($part_from) - 1) == $part_from_n[$replaces_n]){
+						if((count($part_from) - 1) == $this -> vars[$replaces_n]['part_from_n']){
 
 							$replace_to = null;
 
 							foreach($replaces as $tt => $kk){
-								if($tt == $part_from_n_type[$replaces_n]){
+								if($tt == $this -> vars[$replaces_n]['part_from_n_type']){
 									$this -> debug("-- FIND TO REPLACE $tt => $kk\n");
 									$tto = $kk;
 								}
 							}
 							$replace_to = $tto;
-							foreach($replace_to_array[$replaces_n] as $n => $element){
+							foreach($this -> vars[$replaces_n]['replace_to_array'] as $n => $element){
 								$replace_to = str_replace(("\$".($n+1)),$element,$replace_to);
 							}
 
 							$replaces_to[] = $replace_to;
-							$replaces_from[] = $replace_buffer[$replaces_n];
+							$replaces_from[] = $this -> vars[$replaces_n]['replace_buffer'];
 
 							if($replaces_n - 1 >= 0){
 
-								if(!isset($all_replace_buffer[$replaces_n - 1])){
-									$all_replace_buffer[$replaces_n - 1] = '';
+								if(!isset($this -> vars[$replaces_n - 1]['all_replace_buffer'])){
+									$this -> vars[$replaces_n - 1]['all_replace_buffer'] = '';
 								}
-								if(!isset($replace_buffer[$replaces_n - 1])){
-									$replace_buffer[$replaces_n - 1] = '';
+								if(!isset($this -> vars[$replaces_n - 1]['replace_buffer'])){
+									$this -> vars[$replaces_n - 1]['replace_buffer'] = '';
 								}
 
-								$all_replace_enabled[$replaces_n - 1] = true;
-								$all_replace_buffer[$replaces_n - 1] .= $replace_to;
-								$replace_buffer[$replaces_n - 1] .= $replace_to;
+								$this -> vars[$replaces_n - 1]['all_replace_enabled'] = true;
+								$this -> vars[$replaces_n - 1]['all_replace_buffer'] .= $replace_to;
+								$this -> vars[$replaces_n - 1]['replace_buffer'] .= $replace_to;
 							}
 
 
-							$this -> debug("-- ADDED $replace_buffer[$replaces_n] => $replace_to");
+							$this -> debug("-- ADDED {$this -> vars[$replaces_n]['replace_buffer']} => $replace_to");
 
 							
-							unset($replace_to_array[$replaces_n]);
-							unset($replace_to_array_n[$replaces_n]);
-							unset($all_replace_buffer[$replaces_n]);
-							unset($all_replace_enabled[$replaces_n]);
-							unset($replace_buffer[$replaces_n]);
-							unset($part_from_n[$replaces_n]);
-							unset($part_from_n_type[$replaces_n]);
-							unset($buffer_word[$replaces_n]);
-							unset($buffer_word_n[$replaces_n]);
-							unset($part_from_types[$replaces_n]);
+							unset($this -> vars[$replaces_n]);
+
 							$char_brackets['()']=0;
 							$char_brackets['[]']=0;
 							$char_brackets['{}']=0;
@@ -474,12 +457,12 @@ class Parser{
 						}else{
 
 							# Now turn on "ALL CHARACTER". Disable only when the brackets are all to zero and the next char appear
-							$all_replace_enabled[$replaces_n] = true;
+							$this -> vars[$replaces_n]['all_replace_enabled'] = true;
 
 							$this -> debug("-- ENABLING 'ALL CHARACTER'\n");
 
 							# Next part
-							$part_from_n[$replaces_n] += 1;
+							$this -> vars[$replaces_n]['part_from_n'] += 1;
 							/*
 							if(!in_array(0,$part_from_n)){
 								$replace_to_array[] = [];
@@ -493,8 +476,8 @@ class Parser{
 								$buffer_word_n[] = 0;
 							}
 							*/
-							$buffer_word[$replaces_n] = '';
-							$buffer_word_n[$replaces_n] = 0;
+							$this -> vars[$replaces_n]['buffer_word'] = '';
+							$this -> vars[$replaces_n]['buffer_word_n'] = 0;
 
 						}
 
@@ -509,28 +492,28 @@ class Parser{
 				
 			}else{
 
-				if($all_replace_enabled[$replaces_n] == true){
-					$replace_buffer[$replaces_n] .= $char;
-						if(!isset($all_replace_buffer[$replaces_n])){
-							$all_replace_buffer[$replaces_n] = '';
+				if($this -> vars[$replaces_n]['all_replace_enabled'] == true){
+					$this -> vars[$replaces_n]['replace_buffer'] .= $char;
+						if(!isset($this -> vars[$replaces_n]['all_replace_buffer'])){
+							$this -> vars[$replaces_n]['all_replace_buffer'] = '';
 						}
-					$all_replace_buffer[$replaces_n] .= $char;
+					$this -> vars[$replaces_n]['all_replace_buffer'] .= $char;
 
-					$this -> debug("-- BUFFER *: ".$all_replace_buffer[$replaces_n]."\n");
-					$this -> debug("-- BUFFER REPLACE: ".$replace_buffer[$replaces_n]."\n");
+					$this -> debug("-- BUFFER *: ".$this -> vars[$replaces_n]['all_replace_buffer']."\n");
+					$this -> debug("-- BUFFER REPLACE: ".$this -> vars[$replaces_n]['replace_buffer']."\n");
 				}else{
 
 					if(!$string_in){
 						
 						# Ops.. This isn't the all searched.. Damm. Reset all buffer (Again x2). Wait a moment OOP
-						$replace_to_array[$replaces_n] = [];
-						$replace_to_array_n[$replaces_n] = 0;
-						$all_replace_buffer[$replaces_n] = '';
-						$all_replace_enabled[$replaces_n] = false;
-						$replace_buffer[$replaces_n] = '';
-						$part_from_n[$replaces_n] = 0;
-						$part_from_n_type[$replaces_n] = 0;
-						$part_from_types[$replaces_n] = [];
+						$this -> vars[$replaces_n]['replace_to_array'] = [];
+						$this -> vars[$replaces_n]['replace_to_array_n'] = 0;
+						$this -> vars[$replaces_n]['all_replace_buffer'] = '';
+						$this -> vars[$replaces_n]['all_replace_enabled'] = false;
+						$this -> vars[$replaces_n]['replace_buffer'] = '';
+						$this -> vars[$replaces_n]['part_from_n'] = 0;
+						$this -> vars[$replaces_n]['part_from_n_type'] = 0;
+						$this -> vars[$replaces_n]['part_from_types'] = [];
 
 
 						$replaces_n--;
@@ -544,16 +527,7 @@ class Parser{
 			}
 
 
-			$this -> debug("-- replace_n: ".$replaces_n."\n");
-			$this -> debug("-- part_from_n: ".json_encode($part_from_n)."\n");
-			$this -> debug("-- part_from_n_type: ".json_encode($part_from_n_type)."\n");
-			$this -> debug("-- buffer_word: ".json_encode($buffer_word)."\n");
-			$this -> debug("-- buffer_word_n: ".json_encode($buffer_word_n)."\n");
-			$this -> debug("-- all_replace_buffer: ".json_encode($all_replace_buffer)."\n");
-			$this -> debug("-- replace_to_array: ".json_encode($replace_to_array)."\n");
-			$this -> debug("-- replace_buffer: ".json_encode($replace_buffer)."\n");
-			$this -> debug("-- all_replace_enabled: ".json_encode($all_replace_enabled)."\n");
-			$this -> debug("-- part_from_types: ".json_encode($part_from_types)."\n");
+				$this -> debug("-- vars: ".json_encode($this -> vars)."\n");
 
 
 			$last_char = $char;
@@ -572,6 +546,14 @@ class Parser{
 	public function debug($mex){
 		//echo $mex;
 
+	}
+
+	public function getAllElementsFromVar($name){
+		$return = [];
+		foreach($this -> vars as $var){
+			$return[] = $var[$name];
+		}
+		return $return;
 	}
 		
 	public function inPart($parts,$all,$n){
