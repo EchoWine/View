@@ -3,6 +3,8 @@
 
 namespace CoreWine\View;
 
+use CoreWine\Component\Debug;
+
 define('TMPL_CACHE',-1);
 
 class Engine{
@@ -51,6 +53,10 @@ class Engine{
 	 * List of all file compiled
 	 */
 	public static $compiled = [];
+
+	public static $blocks = [];
+
+	public static $current_block;
 
 	/**
 	 * Const structure type root
@@ -123,6 +129,8 @@ class Engine{
 			}
 		}
 
+		return null;
+
 		throw new \Exception("The file '$filename' doesn't exists");
 		die();
 	}
@@ -132,7 +140,12 @@ class Engine{
 		foreach($vars as $name => $k)
 			$$name = $k;
 		
-		include self::$pathStorage.'/'.Engine::getInclude($filename);
+		$filename = Engine::getInclude($filename);
+
+		if($filename == null)
+			return '';
+
+		include self::$pathStorage.'/'.$filename;
 	}
 
 	/**
@@ -236,7 +249,7 @@ class Engine{
 				# Check source of file
 				$t = !file_exists($file -> pathStorageFile) || (file_exists($file -> abs_file) && file_exists($file -> pathStorageFile) && filemtime($file -> abs_file) > filemtime($file -> pathStorageFile));
 
-				if(true){
+				if($t){
 					
 					$content = Engine::getContentsByFileName($file -> abs_file);
 					$content = self::translate($file -> abs_file,$content,$file -> sub,$file -> path_filename);
@@ -340,11 +353,12 @@ class Engine{
 		//echo "\n\nApertura ...".$name."\n\n";
 
    		ob_start();
-		\CoreWine\Component\Debug::add("START Block: ".$name);
+		Debug::add("START Block: ".$name);
    		$structure = Engine::addStructure($name,$type);
 
 
 
+			self::$current_block = $name;;
    		return $structure;
 
 
@@ -357,23 +371,26 @@ class Engine{
 
 		//$content = '';
 
-		//print_r(Engine::getStructure());
-
-		\CoreWine\Component\Debug::add("END Block:".Engine::getStructure() -> getName());
+   		$name = Engine::getStructure() -> getName();
+		Debug::add("END Block:".$name);
 
 
    		if(Engine::getStructure() -> getOverwrite()){
-   			\CoreWine\Component\Debug::add("Leggo il contenuto...");
+   			Debug::add("Leggo il contenuto...");
 			Engine::getStructure() -> setContent($content);
+			self::$blocks[$name] = $content;
+   			Debug::add("SET Content parent");
+   			Debug::add($content);
    		}else{
-   			\CoreWine\Component\Debug::add("Contenuto già scritto in precedenza...");
-
+   			Debug::add("Contenuto già scritto in precedenza...");
+   			Debug::add($content);
    			$_content = $content;
    			$content = Engine::getStructure() -> getContent();
-   			$content = preg_replace('/'.Translator::PARENT_CONTENT.'/',$_content,$content);
+   			Debug::add($content);
+   			$content = preg_replace('/@parent/',$_content,$content);
    		}
 
-   		\CoreWine\Component\Debug::add($content);
+   		Debug::add($content);
    		/*
 		if(Engine::getStructure() -> getParent() !== null)
 			Engine::getStructure() -> getParent() -> concatContent($content);
@@ -386,7 +403,7 @@ class Engine{
 		Engine::setParentStructure($type);
 
 		if(Engine::getStructure() !== null){
-			\CoreWine\Component\Debug::add("Chiudo e passo a ...".Engine::getStructure() -> getName());
+			Debug::add("Chiudo e passo a ...".Engine::getStructure() -> getName());
 		};	
 
 
@@ -394,7 +411,9 @@ class Engine{
 
 	}
 
-
+	public static function getParentBlock(){
+		//return self::$blocks[self::$current_block];
+	}
 
 	public static function addStructure($name,$type){
 
@@ -404,15 +423,15 @@ class Engine{
 
 		if(Engine::$structure_parent != null){
 
-			\CoreWine\Component\Debug::add("Parent add structure: ".Engine::$structure_parent -> getName());
+			Debug::add("Parent add structure: ".Engine::$structure_parent -> getName());
 			$_structure = Engine::$structure_parent -> findChildByName($name);
 
 
-			\CoreWine\Component\Debug::add("Find child already defined: $name in ".Engine::$structure_parent -> getName());
+			Debug::add("Find child already defined: $name in ".Engine::$structure_parent -> getName());
 			# If exists already
 			if($_structure !== null){
 
-				\CoreWine\Component\Debug::add("Found");
+				Debug::add("Found");
 				$structure = $_structure;
 				$structure -> setOverwrite(false);
 			}else{
@@ -466,7 +485,7 @@ class Engine{
 
 		if($include){
 
-			\CoreWine\Component\Debug::add("Includo...".$structure -> getSource());
+			Debug::add("Includo...".$structure -> getSource());
 			include self::$pathStorage.'/'.Engine::getInclude($structure -> getSource());
 		}
 
@@ -493,6 +512,7 @@ class Engine{
 
 		$structure = Engine::startStructure($source,Engine::STRUCTURE_EXTENDS);
 		$structure -> setSource($source);
+		Debug::add("Start EXTENDS ".$structure -> getSource());
 		Engine::getStructure() -> getParent() -> setType(Engine::STRUCTURE_ROOT_EXTENDED);
 
 		Engine::$structure_print = false;
@@ -507,7 +527,12 @@ class Engine{
 		Engine::$structure_print = true;
 
 		echo Engine::endStructure(Engine::STRUCTURE_EXTENDS);
-		include self::$pathStorage.'/'.Engine::getInclude($structure -> getSource());
+
+		$filename = Engine::getInclude($structure -> getSource());
+
+		if($filename)
+			include self::$pathStorage.'/'.$filename;
+
 		Engine::$structure_print = true;
 		
 		
@@ -569,7 +594,7 @@ class Engine{
 		if(!Engine::$structure_print && $structure -> getInner() -> getType() == Engine::STRUCTURE_EXTENDS){
 
 		}else{
-			//\CoreWine\Component\Debug::add("\n\nStampo blocco (Solo se dentro extend)... ".$structure -> getName()."\n\n");
+			//Debug::add("\n\nStampo blocco (Solo se dentro extend)... ".$structure -> getName()."\n\n");
 			echo $c;
 		}
 
