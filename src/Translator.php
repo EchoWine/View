@@ -99,7 +99,7 @@ class Translator{
 		$compiler -> translate("@endif","<?php } ?>");
 
 		# Foreach
-		$compiler -> translate("@foreach(*)","<?php foreach((array)$1){ ?>");
+		$compiler -> translate("@foreach(*)","<?php foreach($1){ ?>");
 		$compiler -> translate("@endforeach","<?php } ?>");
 
 		# Switch
