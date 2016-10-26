@@ -121,18 +121,22 @@ class Engine{
 	 */
 	public static function getInclude($filename,$sub = null){
 
+		$filename = self::parsePath($filename);
+
 		foreach(Engine::$files as $path => $files){
+
 			foreach($files as $file){
-				if($file -> file == $filename || $file -> path."/".$file -> file == $filename){
+				
+				$f = self::parsePath($file -> file);
+
+				if($f == $filename || $file -> path."/".$f == $filename){
 					return $file -> storage.".php";
 				}
 			}
 		}
 
-		return null;
-
 		throw new \Exception("The file '$filename' doesn't exists");
-		die();
+
 	}
 
 	public static function include($filename,$vars = []){
