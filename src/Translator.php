@@ -112,13 +112,13 @@ class Translator{
 		# Switch fix (\n)
 
 		# Embed
-		$compiler -> translate("@embed(*)","<?php ".$this -> getEngineCall()."::startIncludes($1,$1); ?>");
 		$compiler -> translate("@embed(*,*)","<?php ".$this -> getEngineCall()."::startIncludes($1,$2); ?>");
+		$compiler -> translate("@embed(*)","<?php ".$this -> getEngineCall()."::startIncludes($1,$1); ?>");
 		$compiler -> translate("@endembed","<?php ".$this -> getEngineCall()."::endIncludes(); ?>");
 
 		# Block
-		$compiler -> translate("@block(*)","<?php ".$this -> getEngineCall()."::startBlock($1); ?>");
 		$compiler -> translate("@block(*,*)","<?php ".$this -> getEngineCall()."::startBlock($1,$2); ?>");
+		$compiler -> translate("@block(*)","<?php ".$this -> getEngineCall()."::startBlock($1); ?>");
 		$compiler -> translate("@endblock","<?php ".$this -> getEngineCall()."::endBlock(); ?>");
 
 		# Include

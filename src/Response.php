@@ -16,7 +16,19 @@ class Response extends BasicResponse{
 		}
 
 		$s = Engine::startRoot();
-		include $this -> getBody();
+
+		
+		ob_start();
+		try{
+			include $this -> getBody();
+			$content = ob_get_contents();
+			ob_end_clean();
+			echo $content;
+		}catch(\Exception $e){
+			ob_end_clean();
+			throw $e;
+		}
+
 		Engine::endRoot();
 	}
 }

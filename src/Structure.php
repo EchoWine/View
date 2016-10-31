@@ -18,6 +18,7 @@ class Structure{
 	public $content = '';
 	public $overwrite = true;
 	public $source;
+	public $vars = [];
 
 	public function __construct($name,$type){
 		$this -> name = $name;
@@ -26,6 +27,14 @@ class Structure{
 
 	public function setType($type){
 		$this -> type = $type;
+	}
+
+	public function setVars($vars){
+		$this -> vars = $vars;
+	}
+
+	public function getVars(){
+		return (array)$this -> vars;
 	}
 
 	public function getName(){

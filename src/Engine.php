@@ -58,6 +58,8 @@ class Engine{
 
 	public static $current_block;
 
+	public static $random_names = [];
+
 	/**
 	 * Const structure type root
 	 */
@@ -360,9 +362,7 @@ class Engine{
 		Debug::add("START Block: ".$name);
    		$structure = Engine::addStructure($name,$type);
 
-
-
-			self::$current_block = $name;;
+		self::$current_block = $name;
    		return $structure;
 
 
@@ -462,16 +462,32 @@ class Engine{
 		return Engine::$structure;
 	}
 
+	public static function getRandomName(){
+		do{
+			$random_name = sha1(microtime());
+		}while(in_array($random_name,self::$random_names));
+
+		self::$random_names[] = $random_name;
+
+		return $random_name;
+	}
 	/**
 	 * Start extends
 	 *
 	 * Must contain only blocks inside, no space/between
 	 */
-	public static function startIncludes($source,$name,$print = false){
+	public static function startIncludes($source,$vars = [],$name = null,$print = false){
+
 
 		Engine::$structure_print = false;
+
+
+		if($name == null)
+			$name = self::getRandomName();
+
 		$structure = Engine::startStructure($name,Engine::STRUCTURE_EXTENDS);
 		$structure -> setSource($source);
+		$structure -> setVars($vars);
 		Engine::$structure_parent = $structure;
 
 		return $structure;
@@ -490,6 +506,11 @@ class Engine{
 		if($include){
 
 			Debug::add("Includo...".$structure -> getSource());
+
+			foreach($structure -> getVars() as $name => $k){
+				$$name = $k;
+			}
+
 			include self::$pathStorage.'/'.Engine::getInclude($structure -> getSource());
 		}
 
