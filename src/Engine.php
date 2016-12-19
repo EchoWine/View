@@ -5,8 +5,7 @@ namespace CoreWine\View;
 
 use CoreWine\Component\Debug;
 
-define('TMPL_CACHE',-1);
-
+use CoreWine\View\Exceptions\IncludeNotFoundException;
 class Engine{
 
 	/**
@@ -115,6 +114,21 @@ class Engine{
 		return $path;
 	}
 
+	public static function getFileFromStorage($storage_name){
+		foreach(Engine::$files as $path => $files){
+
+			foreach($files as $file){
+
+				
+
+				if($file -> storage.".php" == $storage_name){
+					return $file -> file;
+				}
+			}
+		}
+
+	}
+
 	/**
 	 * Get include
 	 *
@@ -136,8 +150,8 @@ class Engine{
 				}
 			}
 		}
-
-		throw new \Exception("The file '$filename' doesn't exists");
+		
+		throw new IncludeNotFoundException("The file '$filename' doesn't exists");
 
 	}
 
@@ -390,8 +404,9 @@ class Engine{
    			Debug::add($content);
    			$_content = $content;
    			$content = Engine::getStructure() -> getContent();
-   			Debug::add($content);
    			$content = preg_replace('/@parent/',$_content,$content);
+   			Debug::add($content);
+			Engine::getStructure() -> setContent($content);
    		}
 
    		Debug::add($content);
