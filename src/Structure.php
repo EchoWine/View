@@ -3,6 +3,8 @@
 
 namespace CoreWine\View;
 
+use CoreWine\Component\Debug;
+
 /**
  * Element of structure page
  */
@@ -55,11 +57,52 @@ class Structure{
 
 	}
 
+	public function isRoot(){
+
+		return in_array($this -> getType(),[Engine::STRUCTURE_ROOT,Engine::STRUCTURE_ROOT_EXTENDED]);
+	}
+
 	public function findChildByName($name){
-		foreach($this -> childs as $child){
-			if($child -> name == $name)return $child;
+
+		# Get parent extends or root
+
+
+		foreach((array)$this -> childs as $child){
+			Debug::add($this -> getNesting()."[findChildByName] Searching for {$name} in ".$child -> getNesting()); 
+
+			if($grandson = $child -> findChildByName($name)){
+				Debug::add($child -> getNesting()."[findChildByName] Found {$name}");
+
+				return $grandson;
+			}
+
+
+			if($child -> name == $name){
+				Debug::add($child -> getNesting()."[findChildByName] Found {$name}");
+
+				return $child;
+			}
 		}
+
+
+
 		return null;
+	}
+
+	public function findChildOfParentByName($name){
+
+		$structure = $this;
+		Debug::add($this -> getNesting()."[findChildByName] Getting parent extends or root: ".$structure -> getNesting()); 
+
+		while(!$structure -> isRoot() && $structure -> getParent() && !$structure -> getParent() -> isRoot()){
+			Debug::add($structure -> getNesting()."[findChildByName] Moving up "); 
+
+			$structure = $structure -> getParent();
+		}
+
+		Debug::add($this -> getNesting()."[findChildByName] Getting parent extends or root: ".$structure -> getNesting()); 
+		
+		return $structure -> findChildByName($name);
 	}
 
 	public function setSource($source){
@@ -141,7 +184,20 @@ class Structure{
 				$r .= "-";
 		}while($structure);
 
-		return $r;
+		switch($this -> getType()){
+			case 'EXTENDS':
+				return $r."@".$this -> getType()."(".$this -> getSource().",".$this -> getName().")";
+
+			break;
+			case 'BLOCK':
+				return $r."@".$this -> getType()."(".$this -> getName().") ";
+
+			break;
+			default:
+				return $r."@".$this -> getType()."(".$this -> getName().") [".$this -> getSource()."] ";
+
+			break;
+		}
 	}
 
 	public function getChilds(){
