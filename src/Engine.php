@@ -370,11 +370,13 @@ class Engine{
 
 	public static function startStructure($name,$type){
 
-		//echo "\n\nApertura ...".$name."\n\n";
+
+  		Debug::add('Nesting start:'.ob_get_level());
 
    		ob_start();
-		Debug::add("START Block: ".$name);
    		$structure = Engine::addStructure($name,$type);
+  		Debug::add('+Content:'.strlen(ob_get_contents()));
+		Debug::add($structure -> getNesting()."Block Start: ".$name);
 
 		self::$current_block = $name;
    		return $structure;
@@ -385,31 +387,37 @@ class Engine{
 	public static function endStructure($type){
 
   		$content = ob_get_contents();
+  		Debug::add('+Content: '.ob_get_contents());
    		ob_end_clean();
+  		Debug::add('+Nesting end:'.ob_get_level());
 
-		//$content = '';
+   		$structure = Engine::getStructure();
 
-   		$name = Engine::getStructure() -> getName();
-		Debug::add("END Block:".$name);
+   		$name = $structure -> getName();
+		Debug::add($structure -> getNesting()."Block End:".$name);
 
 
    		if(Engine::getStructure() -> getOverwrite()){
-   			Debug::add("Leggo il contenuto...");
+				Debug::add($structure -> getContent());
+
+   			Debug::add($structure -> getNesting()."Reading content block ".$content);
 			Engine::getStructure() -> setContent($content);
 			self::$blocks[$name] = $content;
-   			Debug::add("SET Content parent");
-   			Debug::add($content);
+
+			$type = $structure -> getType();
+			Debug::add('Type: '.$type);
+
+
+
    		}else{
-   			Debug::add("Contenuto già scritto in precedenza...");
-   			Debug::add($content);
+   			Debug::add($structure -> getNesting()."Already written content");
    			$_content = $content;
    			$content = Engine::getStructure() -> getContent();
    			$content = preg_replace('/@parent/',$_content,$content);
-   			Debug::add($content);
+   			
 			Engine::getStructure() -> setContent($content);
    		}
 
-   		Debug::add($content);
    		/*
 		if(Engine::getStructure() -> getParent() !== null)
 			Engine::getStructure() -> getParent() -> concatContent($content);
@@ -422,7 +430,7 @@ class Engine{
 		Engine::setParentStructure($type);
 
 		if(Engine::getStructure() !== null){
-			Debug::add("Chiudo e passo a ...".Engine::getStructure() -> getName());
+			Debug::add($structure -> getNesting()."Moving up to block: ".Engine::getStructure() -> getName());
 		};	
 
 
@@ -437,20 +445,20 @@ class Engine{
 	public static function addStructure($name,$type){
 
 
-
 		$structure = new Structure($name,$type);
+
+		Debug::add($structure -> getNesting()."New Structure [$type]: ".$structure -> getName());
 
 		if(Engine::$structure_parent != null){
 
-			Debug::add("Parent add structure: ".Engine::$structure_parent -> getName());
 			$_structure = Engine::$structure_parent -> findChildByName($name);
 
 
-			Debug::add("Find child already defined: $name in ".Engine::$structure_parent -> getName());
+			Debug::add($structure -> getNesting()."Searching child already defined: $name in ".Engine::$structure_parent -> getName());
 			# If exists already
 			if($_structure !== null){
 
-				Debug::add("Found");
+				Debug::add($structure -> getNesting()."Found");
 				$structure = $_structure;
 				$structure -> setOverwrite(false);
 			}else{
@@ -479,7 +487,7 @@ class Engine{
 
 	public static function getRandomName(){
 		do{
-			$random_name = sha1(microtime());
+			$random_name = microtime().rand(0,1000).rand(0,1000);
 		}while(in_array($random_name,self::$random_names));
 
 		self::$random_names[] = $random_name;
@@ -513,33 +521,44 @@ class Engine{
 	 */
 	public static function endIncludes($include = true){
 
-		$structure = Engine::getStructure();
+		Debug::add("OPEN END INCLUDES");
 
+		$structure = Engine::getStructure();
 
 		Engine::$structure_print = true;
 
 		if($include){
 
-			Debug::add("Includo...".$structure -> getSource());
+			Debug::add($structure -> getNesting()."Include ".$structure -> getSource());
 
 			foreach($structure -> getVars() as $name => $k){
 				$$name = $k;
 			}
+
 
 			include self::$pathStorage.'/'.Engine::getInclude($structure -> getSource());
 		}
 
 		$c = Engine::endStructure(Engine::STRUCTURE_EXTENDS);
 
-		echo $c;
 
 		Engine::$structure_parent = $structure -> getParent();
 
 
-		if(Engine::getStructure() -> getParent() !== null)
-			Engine::$structure_print = Engine::getStructure() -> getParent() -> getType() == Engine::STRUCTURE_ROOT;
-		else
+		if(($parent = Engine::getStructure() -> getParent()) !== null){
+				
+			Debug::add("Parent: ".$parent -> getType());
+			Engine::$structure_print = $parent -> getType() == Engine::STRUCTURE_ROOT || $parent -> getType() == Engine::STRUCTURE_EXTENDS;
+
+			Debug::add("Parent print: ".Engine::$structure_print);
+
+			echo $c;
+		
+
+		}else
 			Engine::$structure_print = true;
+
+		Debug::add("CLOSE END INCLUDES");
 
 		return $c;
 	}
@@ -630,6 +649,9 @@ class Engine{
 		$structure = Engine::getStructure();
 		$c = Engine::endStructure(Engine::STRUCTURE_BLOCK);
 
+		#if type is extends
+		
+		$type = $structure -> getType();
 
 		if(!Engine::$structure_print && $structure -> getInner() -> getType() == Engine::STRUCTURE_EXTENDS){
 

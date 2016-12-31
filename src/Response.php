@@ -16,10 +16,16 @@ class Response extends BasicResponse{
 		foreach($GLOBALS as $n => $k){
 			$$n = $k;
 		}
-
+		
+			ob_end_clean();
 		$s = Engine::startRoot();
 
-		
+			include $this -> getBody();
+
+		Engine::endRoot();
+
+		return;
+				
 		ob_start();
 		try{
 			include $this -> getBody();

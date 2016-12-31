@@ -132,6 +132,21 @@ class Structure{
 		return "Name: ".$this -> name."\n\t\tChilds: ".implode(array_keys($this -> childs),', ').";\n\n";
 	}
 
+	public function getNesting(){
+		$structure = $this;
+		$r = '';
+		do{
+			$structure = $structure -> getParent();
+			if($structure)
+				$r .= "-";
+		}while($structure);
+
+		return $r;
+	}
+
+	public function getChilds(){
+		return $this -> childs;
+	}
 }
 
 ?>
