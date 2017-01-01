@@ -442,6 +442,12 @@ class Engine{
 
 		$structure = new Structure($name,$type);
 
+		$structure -> setParent(Engine::$structure_parent);
+
+		$structure -> setNameNested();
+		Debug::add($structure -> getNesting()."[addStructure] Updated Name ");
+
+
 		Debug::add($structure -> getNesting()."[addStructure] New child ");
 
 		if(Engine::$structure_parent != null){
@@ -449,7 +455,7 @@ class Engine{
 
 
 
-			$_structure = Engine::$structure_parent -> findChildOfParentByName($name);
+			$_structure = Engine::$structure_parent -> findChildOfParentByName($structure -> getName());
 
 			# If exists already
 			if($_structure !== null){
@@ -458,6 +464,7 @@ class Engine{
 				
 				$structure = $_structure;
 				$structure -> setOverwrite(false);
+				$structure -> setParent(null);
 			}else{
 
 				$structure -> setParent(Engine::$structure_parent);
@@ -467,6 +474,7 @@ class Engine{
 
 		$structure -> setInner(Engine::$structure);
 		Engine::$structure = $structure;
+
 		
 
 		return $structure;
@@ -484,7 +492,7 @@ class Engine{
 
 	public static function getRandomName(){
 		do{
-			$random_name = microtime().rand(0,1000).rand(0,1000);
+			$random_name = sha1(rand(0,1000).microtime().rand(0,1000));
 		}while(in_array($random_name,self::$random_names));
 
 		self::$random_names[] = $random_name;
@@ -589,6 +597,7 @@ class Engine{
 
 		echo Engine::endStructure(Engine::STRUCTURE_EXTENDS);
 
+		Debug::add($structure -> getNesting()."[EndExtends] Include");
 		$filename = Engine::getInclude($structure -> getSource());
 
 		if($filename)

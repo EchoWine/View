@@ -47,6 +47,14 @@ class Structure{
 		return $this -> type;
 	}
 	
+	public function setNameNested(){
+
+		if(!$this -> getParent())
+			return;
+
+		$this -> name = $this -> getParent() -> getName().".".$this -> name;
+	}
+
 	public function addChild($structure){
 		$child = $this -> getLastChild();
 		if($child != null){
