@@ -84,7 +84,10 @@ class Translator{
 
 		}
 
+		$compiler -> translate("@php(*)","<?php $1; ?>");
 
+		# Set
+		$compiler -> translate("@set(*,*)","<?php $1 = $2; ?>");
 
 		# Comment
 		$compiler -> translate("{#*#}","<?php /*$1*/ ?>");
