@@ -115,17 +115,9 @@ class Engine{
 	}
 
 	public static function getFileFromStorage($storage_name){
-		foreach(Engine::$files as $path => $files){
 
-			foreach($files as $file){
+		return base64_decode($storage_name);
 
-				
-
-				if($file -> storage.".php" == $storage_name){
-					return $file -> file;
-				}
-			}
-		}
 
 	}
 
@@ -153,6 +145,21 @@ class Engine{
 		
 		throw new IncludeNotFoundException("The file '$filename' doesn't exists");
 
+	}
+
+	public static function getFileNameByCache($storage){
+
+		foreach(Engine::$files as $path => $files){
+
+			foreach($files as $file){
+
+				$f = self::parsePath($file -> file);
+				if($file -> storage == $storage){
+					return $file -> path."/".$f;
+				}
+			}
+
+		}
 	}
 
 	public static function include($filename,$vars = []){
@@ -203,7 +210,7 @@ class Engine{
 	 * @return string full path
 	 */
 	public static function getPathSourceFile($abs){
-		return sha1($abs);
+		return base64_encode($abs);
 	}
 
 	/**
