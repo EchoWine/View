@@ -36,7 +36,7 @@ class Engine{
 	/**
 	 * Files
 	 */
-	public static $files;
+	public static $files = [];
 
 	/**
 	 * List of all error
